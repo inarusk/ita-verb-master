@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ita Verb Master</title>
+  <title>Italian Verb Conjugation</title>
   <style>
     :root {
       --bg: #faf7f2;
@@ -45,7 +45,19 @@
       padding: 48px 16px;
     }
     main { width: 100%; max-width: 440px; }
-    h1 { font-size: 1.6rem; margin: 0 0 4px; }
+    h1 { font-size: 1.9rem; margin: 0 0 4px; line-height: 1.2; }
+    .it-green { color: #009246; }
+    .it-red { color: #ce2b37; }
+    /* White needs a thin outline to be visible on the light background. */
+    .it-white {
+      color: #ffffff;
+      text-shadow: -1px -1px 0 #8a837b, 1px -1px 0 #8a837b, -1px 1px 0 #8a837b, 1px 1px 0 #8a837b;
+    }
+    @media (prefers-color-scheme: dark) {
+      .it-white { text-shadow: none; }
+      .it-green { color: #2bb36b; }
+      .it-red { color: #e5525c; }
+    }
     .tagline { color: var(--muted); margin: 0 0 32px; }
     .level-btn {
       display: block;
@@ -81,6 +93,7 @@
       padding: 28px 24px;
     }
     #verb { font-size: 1.8rem; font-weight: 700; margin: 0; overflow-wrap: anywhere; }
+    #verb .en { font-size: 1rem; font-weight: 400; color: var(--muted); }
     #pronoun { font-size: 1.3rem; color: var(--accent); margin: 6px 0 20px; font-weight: 600; }
     form { display: flex; gap: 8px; }
     #answer {
@@ -115,7 +128,7 @@
 <body>
   <main>
     <section id="menu">
-      <h1>Ita Verb Master</h1>
+      <h1><span class="it-green">Italian</span> <span class="it-white">Verb</span> <span class="it-red">Conjugation</span></h1>
       <p class="tagline">Present tense · presente indicativo</p>
       <button class="level-btn" id="play1">
         <em class="best" id="menu-score-1"></em>

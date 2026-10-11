@@ -21,7 +21,7 @@ function clean(s) {
 
 // Remove accents: "è" -> "e".
 function stripAccents(s) {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 // Drop a leading pronoun if the user typed one ("noi parliamo" -> "parliamo").
@@ -69,8 +69,13 @@ function nextQuestion() {
   clearTimeout(advanceTimer);
   waiting = false;
   current = pickQuestion();
-  const shown = level === 1 ? current.verb.it : current.verb.en;
-  $("verb").textContent = shown;
+  if (level === 1) {
+    // Italian verb with the English in brackets; inner hint brackets become a dash.
+    const en = current.verb.en.replace(/\s*\((.*)\)/, " – $1");
+    $("verb").innerHTML = `${current.verb.it} <span class="en">(${en})</span>`;
+  } else {
+    $("verb").textContent = current.verb.en;
+  }
   $("pronoun").textContent = current.pronoun;
   $("answer").value = "";
   $("answer").disabled = false;
