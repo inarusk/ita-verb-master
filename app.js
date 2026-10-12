@@ -3,16 +3,25 @@
 const PRONOUNS = [["io"], ["tu"], ["lui", "lei"], ["noi"], ["voi"], ["loro"]];
 const ALL_PRONOUNS = ["io", "tu", "lui", "lei", "noi", "voi", "loro"];
 
+// Levels: which verbs they use and whether the prompt is Italian or English.
+const LEVELS = {
+  1: { title: "Level 1 · Regular verbs", types: ["regular"], prompt: "it" },
+  2: { title: "Level 2 · Irregular verbs", types: ["irregular"], prompt: "it" },
+  3: { title: "Level 3 · Reflexive verbs", types: ["reflexive"], prompt: "it" },
+  4: { title: "Level 4 · All verbs, English → Italian", types: ["regular", "irregular", "reflexive"], prompt: "en" },
+};
+const RANKED_LEVEL = 4; // the only level with a leaderboard
+
 // Scores live in memory only: a refresh starts a new session.
-const scores = { 1: { right: 0, total: 0 }, 2: { right: 0, total: 0 } };
+const scores = { 1: { right: 0, total: 0 }, 2: { right: 0, total: 0 }, 3: { right: 0, total: 0 }, 4: { right: 0, total: 0 } };
 
 let level = null;
 let current = null;   // { verb, slot, pronoun }
 let lastKey = null;   // avoid repeating the same question twice in a row
 let waiting = false;  // true while feedback is shown
 let advanceTimer = null;
-let helped = false;    // help was used on this question
-let streak = 0;        // correct answers in a row (no help) in the current level
+let helped = false;   // help was used on this question
+let streak = 0;       // correct answers in a row (no help) in the current level
 
 const $ = (id) => document.getElementById(id);
 
@@ -23,10 +32,11 @@ function clean(s) {
 
 // Remove accents: "è" -> "e".
 function stripAccents(s) {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-// Drop a leading pronoun if the user typed one ("noi parliamo" -> "parliamo").
+// Drop a leading subject pronoun if the user typed one ("noi parliamo" -> "parliamo",
+// "io mi alzo" -> "mi alzo").
 function dropPronoun(s) {
   const parts = s.split(" ");
   if (parts.length > 1 && ALL_PRONOUNS.includes(parts[0])) {
@@ -44,13 +54,18 @@ function check(input, answer) {
   return "wrong";
 }
 
+function verbsFor(lvl) {
+  return VERBS.filter((v) => LEVELS[lvl].types.includes(v.type));
+}
+
 function pickQuestion() {
+  const pool = verbsFor(level);
   let verb, slot, key;
   do {
-    verb = VERBS[Math.floor(Math.random() * VERBS.length)];
+    verb = pool[Math.floor(Math.random() * pool.length)];
     slot = Math.floor(Math.random() * 6);
     key = verb.it + slot;
-  } while (key === lastKey && VERBS.length * 6 > 1);
+  } while (key === lastKey && pool.length * 6 > 1);
   lastKey = key;
   const options = PRONOUNS[slot];
   const pronoun = options[Math.floor(Math.random() * options.length)];
@@ -68,7 +83,7 @@ function renderScore() {
   $("streak").textContent = `· streak ${streak}`;
 }
 
-// ---------- Leaderboard ----------
+// ---------- Leaderboard (Level 4 only) ----------
 
 function store(key, value) {
   try { localStorage.setItem(key, value); } catch {}
@@ -81,17 +96,17 @@ function playerName() {
   return $("name").value.trim();
 }
 
-function scorePayload(lvl, value) {
-  return JSON.stringify({ level: lvl, name: playerName(), country: $("country").value, streak: value });
+function scorePayload(value) {
+  return JSON.stringify({ level: RANKED_LEVEL, name: playerName(), country: $("country").value, streak: value });
 }
 
 // Send a finished streak. Returns a promise so the menu can refresh after it lands.
-function saveStreak(lvl, value) {
+function saveStreak(value) {
   if (!playerName() || value < 1) return Promise.resolve();
   return fetch("/api/scores", {
     method: "POST",
     headers: { "content-type": "text/plain" },
-    body: scorePayload(lvl, value),
+    body: scorePayload(value),
     keepalive: true,
   }).catch(() => {});
 }
@@ -99,13 +114,13 @@ function saveStreak(lvl, value) {
 // The run is over (wrong answer, help, or leaving the level).
 let pendingSave = Promise.resolve();
 function endStreak() {
-  if (streak > 0) pendingSave = saveStreak(level, streak);
+  if (streak > 0 && level === RANKED_LEVEL) pendingSave = saveStreak(streak);
   streak = 0;
   if (level) renderScore();
 }
 
-function renderBoard(lvl, rows) {
-  const ol = $(`board-${lvl}`);
+function renderBoard(rows) {
+  const ol = $("board");
   if (!rows) {
     ol.innerHTML = `<li class="empty">Leaderboard not available right now.</li>`;
     return;
@@ -123,19 +138,17 @@ function renderBoard(lvl, rows) {
   });
 }
 
-async function loadBoards() {
-  for (const lvl of [1, 2]) {
-    try {
-      const res = await fetch(`/api/scores?level=${lvl}`, { cache: "no-store" });
-      const data = await res.json();
-      renderBoard(lvl, res.ok ? data.top : null);
-      // First visit: preselect the country Cloudflare detected.
-      if (data.country && !$("country").value && !load("country")) {
-        $("country").value = data.country;
-      }
-    } catch {
-      renderBoard(lvl, null);
+async function loadBoard() {
+  try {
+    const res = await fetch(`/api/scores?level=${RANKED_LEVEL}`, { cache: "no-store" });
+    const data = await res.json();
+    renderBoard(res.ok ? data.top : null);
+    // First visit: preselect the country Cloudflare detected.
+    if (data.country && !$("country").value && !load("country")) {
+      $("country").value = data.country;
     }
+  } catch {
+    renderBoard(null);
   }
 }
 
@@ -151,21 +164,40 @@ function setupPlayer() {
   sel.addEventListener("change", () => store("country", sel.value));
 }
 
+// ---------- Game ----------
+
 // Each press of "Help me" reveals one more letter of the answer.
 // Keeps the correct part of what was already typed and replaces the rest.
+// Spaces are skipped, so "mi alzo" goes m, mi, mi a, mi al...
 function revealLetter() {
   if (waiting) return;
   helped = true;
   endStreak(); // using help ends the run
   const answer = current.verb.forms[current.slot];
   const box = $("answer");
-  const typed = stripAccents(box.value.toLowerCase());
+  const typed = stripAccents(box.value.toLowerCase().replace(/\s+/g, " ").replace(/^\s+/, ""));
   const plain = stripAccents(answer);
   let n = 0;
   while (n < typed.length && n < plain.length && typed[n] === plain[n]) n++;
-  box.value = answer.slice(0, Math.min(n + 1, answer.length));
+  let end = Math.min(n + 1, answer.length);
+  if (answer[end - 1] === " ") end = Math.min(end + 1, answer.length);
+  box.value = answer.slice(0, end);
   $("help").disabled = box.value.length >= answer.length;
   box.focus();
+}
+
+function showPrompt() {
+  const v = current.verb;
+  if (LEVELS[level].prompt === "it") {
+    // Italian verb with the English in brackets; inner hint brackets become a dash.
+    const en = v.en.replace(/\s*\((.*)\)/, " – $1");
+    $("verb").innerHTML = `${v.it} <span class="en">(${en})</span>`;
+  } else {
+    $("verb").textContent = v.en;
+    if (v.type === "reflexive") {
+      $("verb").insertAdjacentHTML("beforeend", ` <span class="tag">reflexive</span>`);
+    }
+  }
 }
 
 function nextQuestion() {
@@ -174,13 +206,7 @@ function nextQuestion() {
   helped = false;
   $("help").disabled = false;
   current = pickQuestion();
-  if (level === 1) {
-    // Italian verb with the English in brackets; inner hint brackets become a dash.
-    const en = current.verb.en.replace(/\s*\((.*)\)/, " – $1");
-    $("verb").innerHTML = `${current.verb.it} <span class="en">(${en})</span>`;
-  } else {
-    $("verb").textContent = current.verb.en;
-  }
+  showPrompt();
   $("pronoun").textContent = current.pronoun;
   $("answer").value = "";
   $("answer").disabled = false;
@@ -211,7 +237,7 @@ function submit() {
     endStreak();
     fb.className = "feedback wrong";
     fb.innerHTML = `✗ Correct answer: <strong>${answer}</strong>` +
-      (level === 2 ? ` <span class="sub">(${current.verb.it})</span>` : "");
+      (LEVELS[level].prompt === "en" ? ` <span class="sub">(${current.verb.it})</span>` : "");
     $("submit").textContent = "Next";
     $("submit").focus();
   } else if (helped) {
@@ -241,7 +267,7 @@ function startLevel(n) {
   level = n;
   streak = 0;
   lastKey = null;
-  $("level-title").textContent = n === 1 ? "Level 1 · Italian → conjugate" : "Level 2 · English → Italian";
+  $("level-title").textContent = LEVELS[n].title;
   showScreen("game");
   renderScore();
   nextQuestion();
@@ -252,27 +278,29 @@ function backToMenu() {
   endStreak();
   level = null;
   showScreen("menu");
-  pendingSave.then(loadBoards);
-  $("menu-score-1").textContent = scores[1].total ? `${scores[1].right} / ${scores[1].total}` : "";
-  $("menu-score-2").textContent = scores[2].total ? `${scores[2].right} / ${scores[2].total}` : "";
+  pendingSave.then(loadBoard);
+  for (const n of [1, 2, 3, 4]) {
+    $(`menu-score-${n}`).textContent = scores[n].total ? `${scores[n].right} / ${scores[n].total}` : "";
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  $("play1").addEventListener("click", () => startLevel(1));
-  $("play2").addEventListener("click", () => startLevel(2));
+  for (const n of [1, 2, 3, 4]) {
+    $(`play${n}`).addEventListener("click", () => startLevel(n));
+  }
   $("back").addEventListener("click", (e) => { e.preventDefault(); backToMenu(); });
   $("form").addEventListener("submit", (e) => { e.preventDefault(); submit(); });
   $("help").addEventListener("click", revealLetter);
   $("answer").addEventListener("input", () => { if (!waiting) $("help").disabled = false; });
   setupPlayer();
   showScreen("menu");
-  loadBoards();
+  loadBoard();
 });
 
-// Closing or hiding the tab: save the run so far (the best one per name is kept).
+// Closing or hiding the tab during Level 4: save the run so far (the best one per name is kept).
 function saveOnLeave() {
-  if (level && streak > 0 && playerName() && navigator.sendBeacon) {
-    navigator.sendBeacon("/api/scores", new Blob([scorePayload(level, streak)], { type: "text/plain" }));
+  if (level === RANKED_LEVEL && streak > 0 && playerName() && navigator.sendBeacon) {
+    navigator.sendBeacon("/api/scores", new Blob([scorePayload(streak)], { type: "text/plain" }));
   }
 }
 window.addEventListener("pagehide", saveOnLeave);

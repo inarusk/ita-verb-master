@@ -1,10 +1,11 @@
 // Leaderboard API (Cloudflare Pages Function, D1 database bound as "DB").
-//   GET  /api/scores?level=1   -> top 10 for that level, plus the visitor's country
+//   GET  /api/scores?level=4   -> top 10 (only Level 4 is ranked), plus the visitor's country
 //   POST /api/scores           -> { level, name, country, streak } saves a streak
 // One entry per name + country per level; only the best streak is kept.
 // Nothing personal is stored: no IP addresses, only name, country, streak, date.
 
 const TOP_N = 10;
+const RANKED = [4]; // levels that have a leaderboard
 const MAX_NAME = 20;
 
 // Names containing any of these words are rejected (English + Italian basics).
@@ -62,7 +63,7 @@ async function topList(db, level) {
 export async function onRequestGet({ request, env }) {
   const level = Number(new URL(request.url).searchParams.get("level"));
   const country = request.cf?.country || "";
-  if (level !== 1 && level !== 2) return json({ error: "bad level" }, 400);
+  if (!RANKED.includes(level)) return json({ error: "bad level" }, 400);
   if (!env.DB) return json({ error: "no database", top: [], country }, 503);
   await ensureTable(env.DB);
   return json({ top: await topList(env.DB, level), country });
@@ -82,7 +83,7 @@ export async function onRequestPost({ request, env }) {
   let country = String(body.country || "").toUpperCase();
   if (!/^[A-Z]{2}$/.test(country)) country = "";
 
-  if (level !== 1 && level !== 2) return json({ error: "bad level" }, 400);
+  if (!RANKED.includes(level)) return json({ error: "bad level" }, 400);
   if (!Number.isInteger(streak) || streak < 1 || streak > 100000) return json({ error: "bad streak" }, 400);
   if (!name) return json({ error: "no name" }, 400);
   if (isBlocked(name)) return json({ error: "name not allowed" }, 400);
