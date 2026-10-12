@@ -22,6 +22,8 @@ const VERBS = [
   { type: "regular", it: "parlare",   en: "to speak",   forms: ["parlo", "parli", "parla", "parliamo", "parlate", "parlano"] },
 
   // ---- Level 2: irregular ----
+  { type: "irregular", it: "essere",   en: "to be",      forms: ["sono", "sei", "è", "siamo", "siete", "sono"] },
+  { type: "irregular", it: "avere",    en: "to have",    forms: ["ho", "hai", "ha", "abbiamo", "avete", "hanno"] },
   { type: "irregular", it: "andare",   en: "to go",      forms: ["vado", "vai", "va", "andiamo", "andate", "vanno"] },
   { type: "irregular", it: "venire",   en: "to come",    forms: ["vengo", "vieni", "viene", "veniamo", "venite", "vengono"] },
   { type: "irregular", it: "fare",     en: "to do / to make", forms: ["faccio", "fai", "fa", "facciamo", "fate", "fanno"] },
