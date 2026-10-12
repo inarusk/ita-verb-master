@@ -122,6 +122,19 @@
     .feedback.right { background: var(--right-bg); color: var(--right); }
     .feedback.wrong { background: var(--wrong-bg); color: var(--wrong); }
     .feedback .sub { opacity: 0.8; }
+    #help {
+      margin-top: 10px;
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 0.95rem;
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #help:hover:not(:disabled) { border-color: var(--accent); }
+    #help:disabled { opacity: 0.45; cursor: default; }
     .hint { color: var(--muted); font-size: 0.85rem; margin-top: 16px; }
   </style>
 </head>
@@ -157,9 +170,10 @@
                  aria-label="Your answer">
           <button id="submit" type="submit">Check</button>
         </form>
+        <button id="help" type="button">Help me</button>
         <div class="feedback" id="feedback" aria-live="polite"></div>
       </div>
-      <p class="hint">Press Enter to check, and Enter again to continue.</p>
+      <p class="hint">Press Enter to check, and Enter again to continue. Help me types the answer letter by letter; start typing to take over. Answers given with help don't score a point.</p>
     </section>
   </main>
   <script src="verbs.js"></script>
