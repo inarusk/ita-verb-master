@@ -136,6 +136,39 @@
     #help:hover:not(:disabled) { border-color: var(--accent); }
     #help:disabled { opacity: 0.45; cursor: default; }
     .hint { color: var(--muted); font-size: 0.85rem; margin-top: 16px; }
+    #streak { color: var(--muted); font-weight: 600; font-size: 1rem; }
+    .player {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .player p { margin: 0 0 12px; color: var(--muted); font-size: 0.9rem; }
+    .player-row { display: flex; gap: 8px; }
+    .player input, .player select {
+      font: inherit;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      min-width: 0;
+    }
+    .player input { flex: 1; }
+    .player select { flex: 0 1 40%; }
+    .boards { margin-top: 28px; }
+    .boards h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    .board { margin-bottom: 20px; }
+    .board h3 { font-size: 0.95rem; margin: 0 0 6px; color: var(--muted); font-weight: 600; }
+    .board ol { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+    .board li { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--border); }
+    .board li:first-child { border-top: none; }
+    .board .rank { width: 1.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .board .who { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .board .pts { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .board .empty { color: var(--muted); font-size: 0.9rem; }
+    .flag { border-radius: 2px; vertical-align: -2px; box-shadow: 0 0 0 1px var(--border); }
   </style>
 </head>
 <body>
@@ -143,6 +176,14 @@
     <section id="menu">
       <h1><span class="it-green">Italian</span> <span class="it-white">Verb</span> <span class="it-red">Conjugation</span></h1>
       <p class="tagline">Present tense · presente indicativo</p>
+      <div class="player">
+        <p>Want to be on the leaderboard? Enter your name. Your longest run of correct answers is saved (using Help me ends the run). Leave it empty to just practise.</p>
+        <div class="player-row">
+          <input id="name" type="text" maxlength="20" placeholder="Your name" autocomplete="nickname"
+                 autocorrect="off" spellcheck="false" aria-label="Your name">
+          <select id="country" aria-label="Your country"><option value="">Country</option></select>
+        </div>
+      </div>
       <button class="level-btn" id="play1">
         <em class="best" id="menu-score-1"></em>
         <strong>Play Level 1</strong>
@@ -153,12 +194,17 @@
         <strong>Play Level 2</strong>
         <span>See the English verb, type the Italian conjugated form</span>
       </button>
+      <div class="boards">
+        <h2>Best streaks</h2>
+        <div class="board"><h3>Level 1</h3><ol id="board-1"><li class="empty">Loading…</li></ol></div>
+        <div class="board"><h3>Level 2</h3><ol id="board-2"><li class="empty">Loading…</li></ol></div>
+      </div>
     </section>
 
     <section id="game" hidden>
       <div class="top">
         <a href="#" id="back">← Menu</a>
-        <span id="score">0 / 0</span>
+        <span><span id="score">0 / 0</span> <span id="streak"></span></span>
       </div>
       <div id="level-title"></div>
       <div class="card">
@@ -173,10 +219,11 @@
         <button id="help" type="button">Help me</button>
         <div class="feedback" id="feedback" aria-live="polite"></div>
       </div>
-      <p class="hint">Press Enter to check, and Enter again to continue. Each Help me press shows one more letter. Answers given with help don't score a point.</p>
+      <p class="hint">Press Enter to check, and Enter again to continue. Each Help me press shows one more letter. Answers given with help don't score a point and end your streak.</p>
     </section>
   </main>
   <script src="verbs.js"></script>
+  <script src="countries.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
