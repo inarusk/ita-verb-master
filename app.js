@@ -11,9 +11,7 @@ let current = null;   // { verb, slot, pronoun }
 let lastKey = null;   // avoid repeating the same question twice in a row
 let waiting = false;  // true while feedback is shown
 let advanceTimer = null;
-let helpTimer = null;  // types the answer letter by letter
 let helped = false;    // help was used on this question
-const HELP_DELAY = 600; // ms between letters
 
 const $ = (id) => document.getElementById(id);
 
@@ -68,39 +66,27 @@ function renderScore() {
   $("score").textContent = `${s.right} / ${s.total}`;
 }
 
-function stopHelp() {
-  clearInterval(helpTimer);
-  helpTimer = null;
-  $("help").disabled = waiting;
-}
-
-// Type the correct answer into the box, one letter at a time.
-// Keeps what the user already typed if it's a correct start of the answer.
-function startHelp() {
-  if (waiting || helpTimer) return;
+// Each press of "Help me" reveals one more letter of the answer.
+// Keeps the correct part of what was already typed and replaces the rest.
+function revealLetter() {
+  if (waiting) return;
   helped = true;
   const answer = current.verb.forms[current.slot];
   const box = $("answer");
-  const typed = box.value.toLowerCase();
-  const sameStart = stripAccents(answer).startsWith(stripAccents(typed));
-  let i = sameStart ? typed.length : 0;
-  if (!sameStart) box.value = "";
-  $("help").disabled = true;
+  const typed = stripAccents(box.value.toLowerCase());
+  const plain = stripAccents(answer);
+  let n = 0;
+  while (n < typed.length && n < plain.length && typed[n] === plain[n]) n++;
+  box.value = answer.slice(0, Math.min(n + 1, answer.length));
+  $("help").disabled = box.value.length >= answer.length;
   box.focus();
-  const step = () => {
-    if (i >= answer.length) { stopHelp(); $("help").disabled = true; return; }
-    box.value = answer.slice(0, i + 1);
-    i++;
-  };
-  step();
-  helpTimer = setInterval(step, HELP_DELAY);
 }
 
 function nextQuestion() {
   clearTimeout(advanceTimer);
   waiting = false;
   helped = false;
-  stopHelp();
+  $("help").disabled = false;
   current = pickQuestion();
   if (level === 1) {
     // Italian verb with the English in brackets; inner hint brackets become a dash.
@@ -125,7 +111,6 @@ function submit() {
   }
   const input = $("answer").value;
   if (!input.trim()) return;
-  stopHelp();
 
   const answer = current.verb.forms[current.slot];
   const result = check(input, answer);
@@ -175,7 +160,6 @@ function startLevel(n) {
 
 function backToMenu() {
   clearTimeout(advanceTimer);
-  stopHelp();
   showScreen("menu");
   $("menu-score-1").textContent = scores[1].total ? `${scores[1].right} / ${scores[1].total}` : "";
   $("menu-score-2").textContent = scores[2].total ? `${scores[2].right} / ${scores[2].total}` : "";
@@ -186,9 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("play2").addEventListener("click", () => startLevel(2));
   $("back").addEventListener("click", (e) => { e.preventDefault(); backToMenu(); });
   $("form").addEventListener("submit", (e) => { e.preventDefault(); submit(); });
-  $("help").addEventListener("click", startHelp);
-  // Typing while help is running stops it, so you can finish the word yourself.
-  $("answer").addEventListener("input", () => { if (helpTimer) { stopHelp(); $("help").disabled = false; } });
+  $("help").addEventListener("click", revealLetter);
+  $("answer").addEventListener("input", () => { if (!waiting) $("help").disabled = false; });
   showScreen("menu");
 });
 
