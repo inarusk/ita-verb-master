@@ -17,7 +17,13 @@ const scores = { 1: { right: 0, total: 0 }, 2: { right: 0, total: 0 }, 3: { righ
 
 let level = null;
 let current = null;   // { verb, slot, pronoun }
-let lastKey = null;   // avoid repeating the same question twice in a row
+// Question order: verbs and pronouns are dealt from shuffled "decks", so every verb
+// (and every pronoun) comes up once before any repeats. Mistakes come back 3-4 questions later.
+let verbDeck = [];
+let pronounDeck = [];
+let lastVerb = null;
+let lastSlot = null;
+let retries = [];     // { verb, slot, pronoun, wait }: wait = other questions still to show first
 let waiting = false;  // true while feedback is shown
 let advanceTimer = null;
 let helped = false;   // help was used on this question
@@ -58,18 +64,55 @@ function verbsFor(lvl) {
   return VERBS.filter((v) => LEVELS[lvl].types.includes(v.type));
 }
 
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Deal the next card from a deck, reshuffling when it runs out.
+// After a reshuffle the first card is never the same as the previous one.
+function deal(deck, items, previous) {
+  if (!deck.length) {
+    deck.push(...shuffle(items));
+    if (deck.length > 1 && deck[0] === previous) deck.push(deck.shift());
+  }
+  return deck.shift();
+}
+
+function resetQueue() {
+  verbDeck = [];
+  pronounDeck = [];
+  lastVerb = null;
+  lastSlot = null;
+  retries = [];
+}
+
+// Put the exact same question back in the queue, 3 or 4 questions from now.
+function scheduleRetry(q) {
+  retries.push({ verb: q.verb, slot: q.slot, pronoun: q.pronoun, wait: 3 + Math.floor(Math.random() * 2) });
+}
+
 function pickQuestion() {
-  const pool = verbsFor(level);
-  let verb, slot, key;
-  do {
-    verb = pool[Math.floor(Math.random() * pool.length)];
-    slot = Math.floor(Math.random() * 6);
-    key = verb.it + slot;
-  } while (key === lastKey && pool.length * 6 > 1);
-  lastKey = key;
-  const options = PRONOUNS[slot];
-  const pronoun = options[Math.floor(Math.random() * options.length)];
-  return { verb, slot, pronoun };
+  let q;
+  // A retry that's due goes first (one per question; others wait their turn).
+  const due = retries.findIndex((r) => r.wait <= 0);
+  if (due >= 0) {
+    const r = retries.splice(due, 1)[0];
+    q = { verb: r.verb, slot: r.slot, pronoun: r.pronoun, retry: true };
+  } else {
+    const verb = deal(verbDeck, verbsFor(level), lastVerb);
+    const slot = deal(pronounDeck, [0, 1, 2, 3, 4, 5], lastSlot);
+    const options = PRONOUNS[slot];
+    q = { verb, slot, pronoun: options[Math.floor(Math.random() * options.length)] };
+  }
+  retries.forEach((r) => r.wait--);
+  lastVerb = q.verb;
+  lastSlot = q.slot;
+  return q;
 }
 
 function showScreen(name) {
@@ -226,6 +269,7 @@ function submit() {
 
   const answer = current.verb.forms[current.slot];
   const result = check(input, answer);
+  if (result === "wrong" || helped) scheduleRetry(current); // ask it again soon
   const s = scores[level];
   s.total++;
   waiting = true;
@@ -266,7 +310,7 @@ function submit() {
 function startLevel(n) {
   level = n;
   streak = 0;
-  lastKey = null;
+  resetQueue();
   $("level-title").textContent = LEVELS[n].title;
   showScreen("game");
   renderScore();
