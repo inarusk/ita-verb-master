@@ -252,7 +252,7 @@ function nextQuestion() {
   showPrompt();
   $("pronoun").textContent = current.pronoun;
   $("answer").value = "";
-  $("answer").disabled = false;
+  $("answer").readOnly = false;
   $("feedback").textContent = "";
   $("feedback").className = "feedback";
   $("submit").textContent = "Check";
@@ -273,7 +273,8 @@ function submit() {
   const s = scores[level];
   s.total++;
   waiting = true;
-  $("answer").disabled = true;
+  // Read-only (not disabled) keeps the phone keyboard open between questions.
+  $("answer").readOnly = true;
   $("help").disabled = true;
 
   const fb = $("feedback");
@@ -283,13 +284,13 @@ function submit() {
     fb.innerHTML = `✗ Correct answer: <strong>${answer}</strong>` +
       (LEVELS[level].prompt === "en" ? ` <span class="sub">(${current.verb.it})</span>` : "");
     $("submit").textContent = "Next";
-    $("submit").focus();
+    $("answer").focus();
   } else if (helped) {
     // Right, but with help: no point, and wait for Enter like a wrong answer.
     fb.className = "feedback right";
     fb.innerHTML = `✓ <strong>${answer}</strong>, with help (no point)`;
     $("submit").textContent = "Next";
-    $("submit").focus();
+    $("answer").focus();
   } else {
     s.right++;
     streak++;
@@ -299,10 +300,10 @@ function submit() {
       advanceTimer = setTimeout(nextQuestion, 2000);
     } else {
       fb.textContent = "✓ Correct";
-      advanceTimer = setTimeout(nextQuestion, 1000);
+      advanceTimer = setTimeout(nextQuestion, 600);
     }
     $("submit").textContent = "Next";
-    $("submit").focus();
+    $("answer").focus();
   }
   renderScore();
 }
@@ -335,7 +336,13 @@ document.addEventListener("DOMContentLoaded", () => {
   $("back").addEventListener("click", (e) => { e.preventDefault(); backToMenu(); });
   $("form").addEventListener("submit", (e) => { e.preventDefault(); submit(); });
   $("help").addEventListener("click", revealLetter);
-  $("answer").addEventListener("input", () => { if (!waiting) $("help").disabled = false; });
+  $("answer").addEventListener("input", () => {
+    if (waiting) return;
+    $("help").disabled = false;
+    // A correct answer is checked as soon as it's typed, no Enter needed.
+    // Wrong answers still need Enter, so you're never cut off mid-word.
+    if (check($("answer").value, current.verb.forms[current.slot]) !== "wrong") submit();
+  });
   setupPlayer();
   showScreen("menu");
   loadBoard();
