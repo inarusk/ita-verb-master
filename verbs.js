@@ -36,7 +36,7 @@ const VERBS = [
   { type: "irregular", it: "potere",   en: "to be able to (can)", forms: ["posso", "puoi", "può", "possiamo", "potete", "possono"] },
 
   // ---- Level 3: reflexive (answer includes mi / ti / si / ci / vi / si) ----
-  // pp = past participle stem, used for the passato prossimo level: "alzat" -> alzato / alzata / alzati / alzate
+  // pp = past participle stem, used for the passato prossimo level: "alzat" -> alzato / alzata / alzati / alzate (by maschile / femminile)
   { type: "reflexive", it: "alzarsi", pp: "alzat",       en: "to get up",          forms: ["mi alzo", "ti alzi", "si alza", "ci alziamo", "vi alzate", "si alzano"] },
   { type: "reflexive", it: "svegliarsi", pp: "svegliat",    en: "to wake up",         forms: ["mi sveglio", "ti svegli", "si sveglia", "ci svegliamo", "vi svegliate", "si svegliano"] },
   { type: "reflexive", it: "lavarsi", pp: "lavat",       en: "to wash oneself",    forms: ["mi lavo", "ti lavi", "si lava", "ci laviamo", "vi lavate", "si lavano"] },

@@ -66,20 +66,16 @@ function dropPronoun(s) {
 // All accepted answers for a question; the first one is the "main" spelling.
 function answersFor(q) {
   if (LEVELS[level].tense !== "past") return [q.verb.forms[q.slot]];
-  // Passato prossimo of a reflexive verb: reflexive pronoun + essere + participle,
-  // and the participle agrees with the subject. Where the pronoun doesn't tell
-  // (io, tu, noi, voi, loro) both masculine and feminine are accepted.
-  const pp = q.verb.pp;
+  // Passato prossimo of a reflexive verb: reflexive pronoun + essere + participle.
+  // The participle agrees with the subject; the question says maschile or femminile.
   const lead = ["mi sono", "ti sei", "si è", "ci siamo", "vi siete", "si sono"][q.slot];
-  if (q.slot === 2) return [`${lead} ${pp}${q.pronoun === "lei" ? "a" : "o"}`];
-  const [m, f] = q.slot < 2 ? ["o", "a"] : ["i", "e"];
-  return [`${lead} ${pp}${m}`, `${lead} ${pp}${f}`];
+  const plural = q.slot >= 3;
+  const ending = q.gender === "f" ? (plural ? "e" : "a") : (plural ? "i" : "o");
+  return [`${lead} ${q.verb.pp}${ending}`];
 }
 
-// How the correct answer is shown: "mi sono alzato/a", "ci siamo alzati/e".
 function shownAnswer(q) {
-  const a = answersFor(q);
-  return a.length > 1 ? `${a[0]}/${a[1].slice(-1)}` : a[0];
+  return answersFor(q)[0];
 }
 
 // Returns "exact", "accent" (right except accents) or "wrong", against any accepted answer.
@@ -137,7 +133,7 @@ function resetQueue() {
 
 // Put the exact same question back in the queue, 3 or 4 questions from now.
 function scheduleRetry(q) {
-  retries.push({ verb: q.verb, slot: q.slot, pronoun: q.pronoun, wait: 3 + Math.floor(Math.random() * 2) });
+  retries.push({ verb: q.verb, slot: q.slot, pronoun: q.pronoun, gender: q.gender, wait: 3 + Math.floor(Math.random() * 2) });
 }
 
 function pickQuestion() {
@@ -146,12 +142,16 @@ function pickQuestion() {
   const due = retries.findIndex((r) => r.wait <= 0);
   if (due >= 0) {
     const r = retries.splice(due, 1)[0];
-    q = { verb: r.verb, slot: r.slot, pronoun: r.pronoun, retry: true };
+    q = { verb: r.verb, slot: r.slot, pronoun: r.pronoun, gender: r.gender, retry: true };
   } else {
     const verb = deal(verbDeck, verbsFor(level), lastVerb);
     const slot = deal(pronounDeck, [0, 1, 2, 3, 4, 5], lastSlot);
     const options = PRONOUNS[slot];
     q = { verb, slot, pronoun: options[Math.floor(Math.random() * options.length)] };
+    // Passato prossimo: the question also says maschile or femminile (lui/lei already do).
+    if (LEVELS[level].tense === "past") {
+      q.gender = q.pronoun === "lei" ? "f" : q.pronoun === "lui" ? "m" : (Math.random() < 0.5 ? "m" : "f");
+    }
   }
   retries.forEach((r) => r.wait--);
   lastVerb = q.verb;
@@ -313,6 +313,10 @@ function nextQuestion() {
   current = pickQuestion();
   showPrompt();
   $("pronoun").textContent = current.pronoun;
+  if (current.gender) {
+    $("pronoun").insertAdjacentHTML("beforeend",
+      ` <span class="tag">${current.gender === "f" ? "femminile" : "maschile"}</span>`);
+  }
   $("answer").value = "";
   $("answer").readOnly = false;
   $("feedback").textContent = "";

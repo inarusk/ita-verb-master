@@ -5,8 +5,8 @@ Practise Italian verb conjugation (presente indicativo, plus passato prossimo of
 - **Level 1:** regular verbs, prompted in Italian.
 - **Level 2:** irregular verbs, prompted in Italian.
 - **Level 3:** reflexive verbs, prompted in Italian. The answer includes mi / ti / si / ci / vi / si.
-- **Level 4:** reflexive verbs in the passato prossimo, prompted in Italian (mi sono alzato/a). Where the pronoun
-  doesn't decide the gender (io, tu, noi, voi, loro) both endings are accepted; lui → -o, lei → -a.
+- **Level 4:** reflexive verbs in the passato prossimo, prompted in Italian. Each question says maschile or femminile,
+  e.g. "noi · femminile" → ci siamo alzate.
 - **Level 5:** all verbs, prompted in English. This is the only level with a leaderboard.
 
 Levels are defined in `LEVEL_LIST` at the top of `app.js`, and the menu is built from it. The "all verbs" level
