@@ -184,31 +184,12 @@
   <main>
     <section id="menu">
       <h1><span class="it-green">Italian</span> <span class="it-white">Verb</span> <span class="it-red">Conjugation</span></h1>
-      <p class="tagline">Present tense · presente indicativo</p>
-      <button class="level-btn" id="play1">
-        <em class="best" id="menu-score-1"></em>
-        <strong>Level 1 · Regular verbs</strong>
-        <span>See the Italian verb, type the conjugated form</span>
-      </button>
-      <button class="level-btn" id="play2">
-        <em class="best" id="menu-score-2"></em>
-        <strong>Level 2 · Irregular verbs</strong>
-        <span>See the Italian verb, type the conjugated form</span>
-      </button>
-      <button class="level-btn" id="play3">
-        <em class="best" id="menu-score-3"></em>
-        <strong>Level 3 · Reflexive verbs</strong>
-        <span>See the Italian verb, type the form with mi, ti, si…</span>
-      </button>
-      <button class="level-btn ranked" id="play4">
-        <em class="best" id="menu-score-4"></em>
-        <strong>Level 4 · All verbs 🏆</strong>
-        <span>See the English verb, type the Italian conjugated form</span>
-      </button>
+      <p class="tagline">Presente indicativo · passato prossimo</p>
+      <div id="levels"></div>
       <div class="boards">
-        <h2>Level 4 leaderboard · best streaks</h2>
+        <h2 id="board-title">Leaderboard · best streaks</h2>
         <div class="player">
-          <p>Want to be on the leaderboard? Enter your name and play Level 4. Your longest run of correct answers is saved (using Help me ends the run). Leave it empty to just practise.</p>
+          <p>Want to be on the leaderboard? Enter your name and play <span id="board-level">the last level</span>. Your longest run of correct answers is saved (using Help me ends the run). Leave it empty to just practise.</p>
           <div class="player-row">
             <input id="name" type="text" maxlength="20" placeholder="Your name" autocomplete="nickname"
                    autocorrect="off" spellcheck="false" aria-label="Your name">

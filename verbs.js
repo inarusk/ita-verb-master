@@ -36,14 +36,15 @@ const VERBS = [
   { type: "irregular", it: "potere",   en: "to be able to (can)", forms: ["posso", "puoi", "può", "possiamo", "potete", "possono"] },
 
   // ---- Level 3: reflexive (answer includes mi / ti / si / ci / vi / si) ----
-  { type: "reflexive", it: "alzarsi",       en: "to get up",          forms: ["mi alzo", "ti alzi", "si alza", "ci alziamo", "vi alzate", "si alzano"] },
-  { type: "reflexive", it: "svegliarsi",    en: "to wake up",         forms: ["mi sveglio", "ti svegli", "si sveglia", "ci svegliamo", "vi svegliate", "si svegliano"] },
-  { type: "reflexive", it: "lavarsi",       en: "to wash oneself",    forms: ["mi lavo", "ti lavi", "si lava", "ci laviamo", "vi lavate", "si lavano"] },
-  { type: "reflexive", it: "vestirsi",      en: "to get dressed",     forms: ["mi vesto", "ti vesti", "si veste", "ci vestiamo", "vi vestite", "si vestono"] },
-  { type: "reflexive", it: "addormentarsi", en: "to fall asleep",     forms: ["mi addormento", "ti addormenti", "si addormenta", "ci addormentiamo", "vi addormentate", "si addormentano"] },
-  { type: "reflexive", it: "pettinarsi",    en: "to comb one's hair", forms: ["mi pettino", "ti pettini", "si pettina", "ci pettiniamo", "vi pettinate", "si pettinano"] },
-  { type: "reflexive", it: "annoiarsi",     en: "to get bored",       forms: ["mi annoio", "ti annoi", "si annoia", "ci annoiamo", "vi annoiate", "si annoiano"] },
-  { type: "reflexive", it: "arrabbiarsi",   en: "to get angry",       forms: ["mi arrabbio", "ti arrabbi", "si arrabbia", "ci arrabbiamo", "vi arrabbiate", "si arrabbiano"] },
-  { type: "reflexive", it: "divertirsi",    en: "to have fun",        forms: ["mi diverto", "ti diverti", "si diverte", "ci divertiamo", "vi divertite", "si divertono"] },
-  { type: "reflexive", it: "riposarsi",     en: "to rest",            forms: ["mi riposo", "ti riposi", "si riposa", "ci riposiamo", "vi riposate", "si riposano"] },
+  // pp = past participle stem, used for the passato prossimo level: "alzat" -> alzato / alzata / alzati / alzate
+  { type: "reflexive", it: "alzarsi", pp: "alzat",       en: "to get up",          forms: ["mi alzo", "ti alzi", "si alza", "ci alziamo", "vi alzate", "si alzano"] },
+  { type: "reflexive", it: "svegliarsi", pp: "svegliat",    en: "to wake up",         forms: ["mi sveglio", "ti svegli", "si sveglia", "ci svegliamo", "vi svegliate", "si svegliano"] },
+  { type: "reflexive", it: "lavarsi", pp: "lavat",       en: "to wash oneself",    forms: ["mi lavo", "ti lavi", "si lava", "ci laviamo", "vi lavate", "si lavano"] },
+  { type: "reflexive", it: "vestirsi", pp: "vestit",      en: "to get dressed",     forms: ["mi vesto", "ti vesti", "si veste", "ci vestiamo", "vi vestite", "si vestono"] },
+  { type: "reflexive", it: "addormentarsi", pp: "addormentat", en: "to fall asleep",     forms: ["mi addormento", "ti addormenti", "si addormenta", "ci addormentiamo", "vi addormentate", "si addormentano"] },
+  { type: "reflexive", it: "pettinarsi", pp: "pettinat",    en: "to comb one's hair", forms: ["mi pettino", "ti pettini", "si pettina", "ci pettiniamo", "vi pettinate", "si pettinano"] },
+  { type: "reflexive", it: "annoiarsi", pp: "annoiat",     en: "to get bored",       forms: ["mi annoio", "ti annoi", "si annoia", "ci annoiamo", "vi annoiate", "si annoiano"] },
+  { type: "reflexive", it: "arrabbiarsi", pp: "arrabbiat",   en: "to get angry",       forms: ["mi arrabbio", "ti arrabbi", "si arrabbia", "ci arrabbiamo", "vi arrabbiate", "si arrabbiano"] },
+  { type: "reflexive", it: "divertirsi", pp: "divertit",    en: "to have fun",        forms: ["mi diverto", "ti diverti", "si diverte", "ci divertiamo", "vi divertite", "si divertono"] },
+  { type: "reflexive", it: "riposarsi", pp: "riposat",     en: "to rest",            forms: ["mi riposo", "ti riposi", "si riposa", "ci riposiamo", "vi riposate", "si riposano"] },
 ];

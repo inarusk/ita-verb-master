@@ -1,19 +1,31 @@
 // Pronoun slots match the order of forms in verbs.js.
-// Slot 2 shows "lui" or "lei" at random (same form).
+// Slot 2 shows "lui" or "lei" at random (same form in the present; in the passato prossimo
+// of reflexive verbs the ending differs: si è alzato / si è alzata).
 const PRONOUNS = [["io"], ["tu"], ["lui", "lei"], ["noi"], ["voi"], ["loro"]];
 const ALL_PRONOUNS = ["io", "tu", "lui", "lei", "noi", "voi", "loro"];
 
-// Levels: which verbs they use and whether the prompt is Italian or English.
-const LEVELS = {
-  1: { title: "Level 1 · Regular verbs", types: ["regular"], prompt: "it" },
-  2: { title: "Level 2 · Irregular verbs", types: ["irregular"], prompt: "it" },
-  3: { title: "Level 3 · Reflexive verbs", types: ["reflexive"], prompt: "it" },
-  4: { title: "Level 4 · All verbs, English → Italian", types: ["regular", "irregular", "reflexive"], prompt: "en" },
-};
-const RANKED_LEVEL = 4; // the only level with a leaderboard
+// Levels, in menu order. Rule: the "all verbs" level is always the LAST one, and it is
+// the one with the leaderboard. To add a level, insert it before the last entry.
+//   types:  which verb groups it uses     prompt: "it" (Italian verb) or "en" (English verb)
+//   tense:  "present" or "past" (passato prossimo, reflexive verbs only for now)
+const LEVEL_LIST = [
+  { name: "Regular verbs", desc: "See the Italian verb, type the conjugated form", types: ["regular"], prompt: "it", tense: "present" },
+  { name: "Irregular verbs", desc: "See the Italian verb, type the conjugated form", types: ["irregular"], prompt: "it", tense: "present" },
+  { name: "Reflexive verbs", desc: "See the Italian verb, type the form with mi, ti, si…", types: ["reflexive"], prompt: "it", tense: "present" },
+  { name: "Verbi riflessivi al passato prossimo", desc: "Reflexive verbs in the past: mi sono alzato/a, ti sei…", types: ["reflexive"], prompt: "it", tense: "past" },
+  { name: "All verbs 🏆", desc: "See the English verb, type the Italian conjugated form", types: ["regular", "irregular", "reflexive"], prompt: "en", tense: "present" },
+];
+const LEVELS = {};
+LEVEL_LIST.forEach((l, i) => { LEVELS[i + 1] = { ...l, title: `Level ${i + 1} · ${l.name.replace(" 🏆", "")}` }; });
+const LEVEL_NUMBERS = LEVEL_LIST.map((_, i) => i + 1);
+const RANKED_LEVEL = LEVEL_LIST.length; // the last level has the leaderboard
+// The leaderboard is stored on the server under id 4 (it was Level 4 when it started),
+// so existing scores stay when levels are added in front of it.
+const BOARD_ID = 4;
 
 // Scores live in memory only: a refresh starts a new session.
-const scores = { 1: { right: 0, total: 0 }, 2: { right: 0, total: 0 }, 3: { right: 0, total: 0 }, 4: { right: 0, total: 0 } };
+const scores = {};
+LEVEL_NUMBERS.forEach((n) => { scores[n] = { right: 0, total: 0 }; });
 
 let level = null;
 let current = null;   // { verb, slot, pronoun }
@@ -38,7 +50,7 @@ function clean(s) {
 
 // Remove accents: "è" -> "e".
 function stripAccents(s) {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 // Drop a leading subject pronoun if the user typed one ("noi parliamo" -> "parliamo",
@@ -51,13 +63,45 @@ function dropPronoun(s) {
   return s;
 }
 
-// Returns "exact", "accent" (right except accents) or "wrong".
-function check(input, answer) {
+// All accepted answers for a question; the first one is the "main" spelling.
+function answersFor(q) {
+  if (LEVELS[level].tense !== "past") return [q.verb.forms[q.slot]];
+  // Passato prossimo of a reflexive verb: reflexive pronoun + essere + participle,
+  // and the participle agrees with the subject. Where the pronoun doesn't tell
+  // (io, tu, noi, voi, loro) both masculine and feminine are accepted.
+  const pp = q.verb.pp;
+  const lead = ["mi sono", "ti sei", "si è", "ci siamo", "vi siete", "si sono"][q.slot];
+  if (q.slot === 2) return [`${lead} ${pp}${q.pronoun === "lei" ? "a" : "o"}`];
+  const [m, f] = q.slot < 2 ? ["o", "a"] : ["i", "e"];
+  return [`${lead} ${pp}${m}`, `${lead} ${pp}${f}`];
+}
+
+// How the correct answer is shown: "mi sono alzato/a", "ci siamo alzati/e".
+function shownAnswer(q) {
+  const a = answersFor(q);
+  return a.length > 1 ? `${a[0]}/${a[1].slice(-1)}` : a[0];
+}
+
+// Returns "exact", "accent" (right except accents) or "wrong", against any accepted answer.
+function check(input, answers) {
+  const list = Array.isArray(answers) ? answers : [answers];
   const typed = dropPronoun(clean(input));
-  const correct = clean(answer);
-  if (typed === correct) return "exact";
-  if (stripAccents(typed) === stripAccents(correct)) return "accent";
+  if (list.some((a) => typed === clean(a))) return "exact";
+  if (list.some((a) => stripAccents(typed) === stripAccents(clean(a)))) return "accent";
   return "wrong";
+}
+
+// Which accepted answer the user is typing towards (for Help me and the "spelled" note).
+function closestAnswer(input, answers) {
+  const typed = stripAccents(dropPronoun(clean(input)));
+  let best = answers[0], bestLen = -1;
+  for (const a of answers) {
+    const plain = stripAccents(a);
+    let n = 0;
+    while (n < typed.length && n < plain.length && typed[n] === plain[n]) n++;
+    if (n > bestLen) { best = a; bestLen = n; }
+  }
+  return best;
 }
 
 function verbsFor(lvl) {
@@ -115,6 +159,24 @@ function pickQuestion() {
   return q;
 }
 
+// Level buttons are built from LEVEL_LIST, so adding a level needs no HTML changes.
+function buildMenu() {
+  const box = $("levels");
+  for (const n of LEVEL_NUMBERS) {
+    const l = LEVELS[n];
+    const btn = document.createElement("button");
+    btn.className = "level-btn" + (n === RANKED_LEVEL ? " ranked" : "");
+    btn.id = `play${n}`;
+    btn.innerHTML = `<em class="best" id="menu-score-${n}"></em><strong></strong><span></span>`;
+    btn.querySelector("strong").textContent = `Level ${n} · ${l.name}`;
+    btn.querySelector("span").textContent = l.desc;
+    btn.addEventListener("click", () => startLevel(n));
+    box.appendChild(btn);
+  }
+  $("board-title").textContent = `Level ${RANKED_LEVEL} leaderboard · best streaks`;
+  $("board-level").textContent = `Level ${RANKED_LEVEL}`;
+}
+
 function showScreen(name) {
   $("menu").hidden = name !== "menu";
   $("game").hidden = name !== "game";
@@ -126,7 +188,7 @@ function renderScore() {
   $("streak").textContent = `· streak ${streak}`;
 }
 
-// ---------- Leaderboard (Level 4 only) ----------
+// ---------- Leaderboard (last level only) ----------
 
 function store(key, value) {
   try { localStorage.setItem(key, value); } catch {}
@@ -140,7 +202,7 @@ function playerName() {
 }
 
 function scorePayload(value) {
-  return JSON.stringify({ level: RANKED_LEVEL, name: playerName(), country: $("country").value, streak: value });
+  return JSON.stringify({ level: BOARD_ID, name: playerName(), country: $("country").value, streak: value });
 }
 
 // Send a finished streak. Returns a promise so the menu can refresh after it lands.
@@ -183,7 +245,7 @@ function renderBoard(rows) {
 
 async function loadBoard() {
   try {
-    const res = await fetch(`/api/scores?level=${RANKED_LEVEL}`, { cache: "no-store" });
+    const res = await fetch(`/api/scores?level=${BOARD_ID}`, { cache: "no-store" });
     const data = await res.json();
     renderBoard(res.ok ? data.top : null);
     // First visit: preselect the country Cloudflare detected.
@@ -216,8 +278,8 @@ function revealLetter() {
   if (waiting) return;
   helped = true;
   endStreak(); // using help ends the run
-  const answer = current.verb.forms[current.slot];
   const box = $("answer");
+  const answer = closestAnswer(box.value, answersFor(current));
   const typed = stripAccents(box.value.toLowerCase().replace(/\s+/g, " ").replace(/^\s+/, ""));
   const plain = stripAccents(answer);
   let n = 0;
@@ -267,8 +329,9 @@ function submit() {
   const input = $("answer").value;
   if (!input.trim()) return;
 
-  const answer = current.verb.forms[current.slot];
-  const result = check(input, answer);
+  const answers = answersFor(current);
+  const result = check(input, answers);
+  const answer = result === "wrong" ? shownAnswer(current) : closestAnswer(input, answers);
   if (result === "wrong" || helped) scheduleRetry(current); // ask it again soon
   const s = scores[level];
   s.total++;
@@ -324,15 +387,13 @@ function backToMenu() {
   level = null;
   showScreen("menu");
   pendingSave.then(loadBoard);
-  for (const n of [1, 2, 3, 4]) {
+  for (const n of LEVEL_NUMBERS) {
     $(`menu-score-${n}`).textContent = scores[n].total ? `${scores[n].right} / ${scores[n].total}` : "";
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  for (const n of [1, 2, 3, 4]) {
-    $(`play${n}`).addEventListener("click", () => startLevel(n));
-  }
+  buildMenu();
   $("back").addEventListener("click", (e) => { e.preventDefault(); backToMenu(); });
   $("form").addEventListener("submit", (e) => { e.preventDefault(); submit(); });
   $("help").addEventListener("click", revealLetter);
@@ -341,14 +402,14 @@ document.addEventListener("DOMContentLoaded", () => {
     $("help").disabled = false;
     // A correct answer is checked as soon as it's typed, no Enter needed.
     // Wrong answers still need Enter, so you're never cut off mid-word.
-    if (check($("answer").value, current.verb.forms[current.slot]) !== "wrong") submit();
+    if (check($("answer").value, answersFor(current)) !== "wrong") submit();
   });
   setupPlayer();
   showScreen("menu");
   loadBoard();
 });
 
-// Closing or hiding the tab during Level 4: save the run so far (the best one per name is kept).
+// Closing or hiding the tab during the ranked level: save the run so far (the best one per name is kept).
 function saveOnLeave() {
   if (level === RANKED_LEVEL && streak > 0 && playerName() && navigator.sendBeacon) {
     navigator.sendBeacon("/api/scores", new Blob([scorePayload(streak)], { type: "text/plain" }));
