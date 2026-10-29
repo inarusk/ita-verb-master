@@ -1,12 +1,13 @@
 # Ita Verb Master
 
-Practise Italian verb conjugation (presente indicativo, plus passato prossimo of reflexive verbs).
+Practise Italian verb conjugation: presente indicativo and passato prossimo.
 
 - **Level 1:** regular verbs, prompted in Italian.
 - **Level 2:** irregular verbs, prompted in Italian.
 - **Level 3:** reflexive verbs, prompted in Italian. The answer includes mi / ti / si / ci / vi / si.
-- **Level 4:** reflexive verbs in the passato prossimo, prompted in Italian. Each question says maschile or femminile,
-  e.g. "noi · femminile" → ci siamo alzate.
+- **Level 4:** passato prossimo, prompted in Italian. Uses every verb with a `pp` in `verbs.js` (avere verbs, essere verbs
+  and reflexive verbs). For essere and reflexive verbs the question says maschile or femminile,
+  e.g. "noi · femminile" → siamo andate / ci siamo alzate. Avere verbs have no gender label (ho mangiato).
 - **Level 5:** all verbs, prompted in English. This is the only level with a leaderboard.
 
 Levels are defined in `LEVEL_LIST` at the top of `app.js`, and the menu is built from it. The "all verbs" level
@@ -19,8 +20,9 @@ Static files (`index.html`, `app.js`, `verbs.js`, `countries.js`, `flags/`) plus
 ## Adding verbs
 
 Edit `verbs.js`. Each verb is one line with a `type` (`regular`, `irregular` or `reflexive`, which decides its level)
-and its six forms in this order: io, tu, lui/lei, noi, voi, loro. Reflexive verbs also have `pp`, the past participle
-stem ("alzat"), used for the passato prossimo level.
+and its six forms in this order: io, tu, lui/lei, noi, voi, loro. Verbs in the passato prossimo level also have `pp`,
+the past participle without its last vowel ("mangiat"), and `aux` ("avere" or "essere"; reflexive verbs always use
+essere). Verbs only practised in the past use `type: "pastonly"` and need no present forms.
 
 ## Hosting
 

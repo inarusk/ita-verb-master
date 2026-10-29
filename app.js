@@ -7,12 +7,12 @@ const ALL_PRONOUNS = ["io", "tu", "lui", "lei", "noi", "voi", "loro"];
 // Levels, in menu order. Rule: the "all verbs" level is always the LAST one, and it is
 // the one with the leaderboard. To add a level, insert it before the last entry.
 //   types:  which verb groups it uses     prompt: "it" (Italian verb) or "en" (English verb)
-//   tense:  "present" or "past" (passato prossimo, reflexive verbs only for now)
+//   tense:  "present" or "past" (passato prossimo: uses every verb that has a "pp" in verbs.js)
 const LEVEL_LIST = [
   { name: "Regular verbs", desc: "See the Italian verb, type the conjugated form", types: ["regular"], prompt: "it", tense: "present" },
   { name: "Irregular verbs", desc: "See the Italian verb, type the conjugated form", types: ["irregular"], prompt: "it", tense: "present" },
   { name: "Reflexive verbs", desc: "See the Italian verb, type the form with mi, ti, si…", types: ["reflexive"], prompt: "it", tense: "present" },
-  { name: "Verbi riflessivi al passato prossimo", desc: "Reflexive verbs in the past: mi sono alzato/a, ti sei…", types: ["reflexive"], prompt: "it", tense: "past" },
+  { name: "Passato prossimo", desc: "Past tense: ho mangiato, sono andato/a, mi sono alzato/a…", types: [], prompt: "it", tense: "past" },
   { name: "All verbs 🏆", desc: "See the English verb, type the Italian conjugated form", types: ["regular", "irregular", "reflexive"], prompt: "en", tense: "present" },
 ];
 const LEVELS = {};
@@ -66,12 +66,23 @@ function dropPronoun(s) {
 // All accepted answers for a question; the first one is the "main" spelling.
 function answersFor(q) {
   if (LEVELS[level].tense !== "past") return [q.verb.forms[q.slot]];
-  // Passato prossimo of a reflexive verb: reflexive pronoun + essere + participle.
-  // The participle agrees with the subject; the question says maschile or femminile.
-  const lead = ["mi sono", "ti sei", "si è", "ci siamo", "vi siete", "si sono"][q.slot];
-  const plural = q.slot >= 3;
-  const ending = q.gender === "f" ? (plural ? "e" : "a") : (plural ? "i" : "o");
-  return [`${lead} ${q.verb.pp}${ending}`];
+  // Passato prossimo = auxiliary (avere / essere, with mi/ti/si for reflexive verbs) + participle.
+  const v = q.verb;
+  const aux = v.type === "reflexive" ? ["mi sono", "ti sei", "si è", "ci siamo", "vi siete", "si sono"]
+    : v.aux === "essere" ? ["sono", "sei", "è", "siamo", "siete", "sono"]
+    : ["ho", "hai", "ha", "abbiamo", "avete", "hanno"];
+  // With essere the participle agrees with the subject (the question says maschile / femminile).
+  let ending = "o";
+  if (agrees(v)) {
+    const plural = q.slot >= 3;
+    ending = q.gender === "f" ? (plural ? "e" : "a") : (plural ? "i" : "o");
+  }
+  return [`${aux[q.slot]} ${v.pp}${ending}`];
+}
+
+// Does the participle change with the subject's gender? (essere verbs and reflexive verbs)
+function agrees(v) {
+  return v.type === "reflexive" || v.aux === "essere";
 }
 
 function shownAnswer(q) {
@@ -101,6 +112,7 @@ function closestAnswer(input, answers) {
 }
 
 function verbsFor(lvl) {
+  if (LEVELS[lvl].tense === "past") return VERBS.filter((v) => v.pp);
   return VERBS.filter((v) => LEVELS[lvl].types.includes(v.type));
 }
 
@@ -149,7 +161,7 @@ function pickQuestion() {
     const options = PRONOUNS[slot];
     q = { verb, slot, pronoun: options[Math.floor(Math.random() * options.length)] };
     // Passato prossimo: the question also says maschile or femminile (lui/lei already do).
-    if (LEVELS[level].tense === "past") {
+    if (LEVELS[level].tense === "past" && agrees(verb)) {
       q.gender = q.pronoun === "lei" ? "f" : q.pronoun === "lui" ? "m" : (Math.random() < 0.5 ? "m" : "f");
     }
   }
