@@ -1,6 +1,7 @@
 // Verb list: present tense (presente indicativo).
 // Order of forms: io, tu, lui/lei, noi, voi, loro.
-// type: "regular", "irregular", "reflexive" (present-tense levels) or "pastonly" (only in the passato prossimo level).
+// type: "regular", "irregular", "reflexive" (present-tense levels) or "pastonly" (only in the passato prossimo level,
+// no present forms needed).
 // Passato prossimo: verbs with a "pp" are in that level. pp = past participle without its last vowel
 // ("mangiat" -> mangiato), aux = "avere" or "essere". With essere (and all reflexive verbs) the
 // participle agrees with the subject: andato / andata / andati / andate. With avere it stays -o.
@@ -24,6 +25,13 @@ const VERBS = [
   { type: "regular", it: "sentire",   en: "to hear / to feel", forms: ["sento", "senti", "sente", "sentiamo", "sentite", "sentono"] },
   { type: "regular", it: "parlare",   en: "to speak",   forms: ["parlo", "parli", "parla", "parliamo", "parlate", "parlano"] },
 
+  { type: "regular", it: "arrivare",  en: "to arrive",  pp: "arrivat", aux: "essere", forms: ["arrivo", "arrivi", "arriva", "arriviamo", "arrivate", "arrivano"] },
+  { type: "regular", it: "visitare",  en: "to visit",   pp: "visitat", aux: "avere", forms: ["visito", "visiti", "visita", "visitiamo", "visitate", "visitano"] },
+  { type: "regular", it: "camminare", en: "to walk",    pp: "camminat", aux: "avere", forms: ["cammino", "cammini", "cammina", "camminiamo", "camminate", "camminano"] },
+  { type: "regular", it: "tornare",   en: "to return / to come back", pp: "tornat", aux: "essere", forms: ["torno", "torni", "torna", "torniamo", "tornate", "tornano"] },
+  { type: "regular", it: "crescere",  en: "to grow (up)", pp: "cresciut", aux: "essere", forms: ["cresco", "cresci", "cresce", "cresciamo", "crescete", "crescono"] },
+  { type: "regular", it: "viaggiare", en: "to travel",  pp: "viaggiat", aux: "avere", forms: ["viaggio", "viaggi", "viaggia", "viaggiamo", "viaggiate", "viaggiano"] },
+
   // ---- Level 2: irregular ----
   { type: "irregular", it: "essere",   en: "to be",      forms: ["sono", "sei", "è", "siamo", "siete", "sono"] },
   { type: "irregular", it: "avere", pp: "avut", aux: "avere",    en: "to have",    forms: ["ho", "hai", "ha", "abbiamo", "avete", "hanno"] },
@@ -37,6 +45,7 @@ const VERBS = [
   { type: "irregular", it: "rimanere", en: "to remain / to stay", forms: ["rimango", "rimani", "rimane", "rimaniamo", "rimanete", "rimangono"] },
   { type: "irregular", it: "bere",     en: "to drink",   forms: ["bevo", "bevi", "beve", "beviamo", "bevete", "bevono"] },
   { type: "irregular", it: "potere",   en: "to be able to (can)", forms: ["posso", "puoi", "può", "possiamo", "potete", "possono"] },
+  { type: "irregular", it: "stare",    en: "to be / to stay (feel, location)", pp: "stat", aux: "essere", forms: ["sto", "stai", "sta", "stiamo", "state", "stanno"] },
 
   // ---- Level 3: reflexive (answer includes mi / ti / si / ci / vi / si) ----
   // pp = past participle stem, used for the passato prossimo level: "alzat" -> alzato / alzata / alzati / alzate (by maschile / femminile)
@@ -51,12 +60,4 @@ const VERBS = [
   { type: "reflexive", it: "divertirsi", pp: "divertit",    en: "to have fun",        forms: ["mi diverto", "ti diverti", "si diverte", "ci divertiamo", "vi divertite", "si divertono"] },
   { type: "reflexive", it: "riposarsi", pp: "riposat",     en: "to rest",            forms: ["mi riposo", "ti riposi", "si riposa", "ci riposiamo", "vi riposate", "si riposano"] },
 
-  // ---- Passato prossimo only (not in the present-tense levels) ----
-  { type: "pastonly", it: "arrivare",  en: "to arrive",            pp: "arrivat",   aux: "essere" },
-  { type: "pastonly", it: "visitare",  en: "to visit",             pp: "visitat",   aux: "avere" },
-  { type: "pastonly", it: "camminare", en: "to walk",              pp: "camminat",  aux: "avere" },
-  { type: "pastonly", it: "tornare",   en: "to return / to come back", pp: "tornat", aux: "essere" },
-  { type: "pastonly", it: "stare",     en: "to be / to stay",      pp: "stat",      aux: "essere" },
-  { type: "pastonly", it: "crescere",  en: "to grow (up)",         pp: "cresciut",  aux: "essere" },
-  { type: "pastonly", it: "viaggiare", en: "to travel",            pp: "viaggiat",  aux: "avere" },
 ];
