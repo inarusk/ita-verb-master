@@ -4,23 +4,33 @@
 const PRONOUNS = [["io"], ["tu"], ["lui", "lei"], ["noi"], ["voi"], ["loro"]];
 const ALL_PRONOUNS = ["io", "tu", "lui", "lei", "noi", "voi", "loro"];
 
-// Levels, in menu order. Rule: the "all verbs" level is always the LAST one, and it is
-// the one with the leaderboard. To add a level, insert it before the last entry.
-//   types:  which verb groups it uses     prompt: "it" (Italian verb) or "en" (English verb)
-//   tense:  "present" or "past" (passato prossimo: uses every verb that has a "pp" in verbs.js)
+// Levels, in two menu columns: Presente and Passato prossimo. In each column the
+// "all together" level is always the LAST one. To add a level, insert it before that.
+//   column: "presente" or "passato"         prompt: "it" (Italian verb) or "en" (English verb)
+//   types:  presente levels: which verb groups (see verbs.js)
+//   past:   passato levels: "avere", "essere", "reflexive" or "all" (verbs that have a "pp")
+//   ranked: the one level with the leaderboard
 const LEVEL_LIST = [
-  { name: "Regular verbs", desc: "See the Italian verb, type the conjugated form", types: ["regular"], prompt: "it", tense: "present" },
-  { name: "Irregular verbs", desc: "See the Italian verb, type the conjugated form", types: ["irregular"], prompt: "it", tense: "present" },
-  { name: "Reflexive verbs", desc: "See the Italian verb, type the form with mi, ti, si…", types: ["reflexive"], prompt: "it", tense: "present" },
-  { name: "Passato prossimo", desc: "Past tense: ho mangiato, sono andato/a, mi sono alzato/a…", types: [], prompt: "it", tense: "past" },
-  { name: "All verbs 🏆", desc: "See the English verb, type the Italian conjugated form", types: ["regular", "irregular", "reflexive"], prompt: "en", tense: "present" },
+  { column: "presente", name: "Regular verbs", desc: "See the Italian verb, type the conjugated form", types: ["regular"], prompt: "it" },
+  { column: "presente", name: "Irregular verbs", desc: "See the Italian verb, type the conjugated form", types: ["irregular"], prompt: "it" },
+  { column: "presente", name: "Reflexive verbs", desc: "See the Italian verb, type the form with mi, ti, si…", types: ["reflexive"], prompt: "it" },
+  { column: "presente", name: "All verbs 🏆", desc: "See the English verb, type the Italian conjugated form", types: ["regular", "irregular", "reflexive"], prompt: "en", ranked: true },
+  { column: "passato", name: "Verbs with avere", desc: "ho mangiato, hai dormito…", past: "avere", prompt: "it" },
+  { column: "passato", name: "Verbs with essere", desc: "sono andato/a, sei partito/a… (maschile / femminile)", past: "essere", prompt: "it" },
+  { column: "passato", name: "Reflexive verbs", desc: "mi sono alzato/a, ti sei svegliato/a…", past: "reflexive", prompt: "it" },
+  { column: "passato", name: "All verbs", desc: "See the English verb, type the Italian passato prossimo", past: "all", prompt: "en" },
 ];
+const COLUMNS = { presente: "Presente", passato: "Passato prossimo" };
 const LEVELS = {};
-LEVEL_LIST.forEach((l, i) => { LEVELS[i + 1] = { ...l, title: `Level ${i + 1} · ${l.name.replace(" 🏆", "")}` }; });
-const LEVEL_NUMBERS = LEVEL_LIST.map((_, i) => i + 1);
-const RANKED_LEVEL = LEVEL_LIST.length; // the last level has the leaderboard
+const LEVEL_NUMBERS = LEVEL_LIST.map((_, i) => i + 1); // internal ids
+LEVEL_LIST.forEach((l, i) => {
+  const shown = LEVEL_LIST.slice(0, i + 1).filter((x) => x.column === l.column).length; // number within its column
+  LEVELS[i + 1] = { ...l, tense: l.past ? "past" : "present", shown,
+    title: `${COLUMNS[l.column]} · Level ${shown} · ${l.name.replace(" 🏆", "")}` };
+});
+const RANKED_LEVEL = LEVEL_NUMBERS.find((n) => LEVELS[n].ranked);
 // The leaderboard is stored on the server under id 4 (it was Level 4 when it started),
-// so existing scores stay when levels are added in front of it.
+// so existing scores stay whatever the level's position in the menu.
 const BOARD_ID = 4;
 
 // Scores live in memory only: a refresh starts a new session.
@@ -112,7 +122,11 @@ function closestAnswer(input, answers) {
 }
 
 function verbsFor(lvl) {
-  if (LEVELS[lvl].tense === "past") return VERBS.filter((v) => v.pp);
+  const past = LEVELS[lvl].past;
+  if (past) {
+    const group = (v) => (v.type === "reflexive" ? "reflexive" : v.aux);
+    return VERBS.filter((v) => v.pp && (past === "all" || group(v) === past));
+  }
   return VERBS.filter((v) => LEVELS[lvl].types.includes(v.type));
 }
 
@@ -173,23 +187,28 @@ function pickQuestion() {
 
 // Level buttons are built from LEVEL_LIST, so adding a level needs no HTML changes.
 function buildMenu() {
-  const box = $("levels");
-  for (const n of LEVEL_NUMBERS) {
-    const l = LEVELS[n];
-    const btn = document.createElement("button");
-    btn.className = "level-btn" + (n === RANKED_LEVEL ? " ranked" : "");
-    btn.id = `play${n}`;
-    btn.innerHTML = `<em class="best" id="menu-score-${n}"></em><strong></strong><span></span>`;
-    btn.querySelector("strong").textContent = `Level ${n} · ${l.name}`;
-    btn.querySelector("span").textContent = l.desc;
-    btn.addEventListener("click", () => startLevel(n));
-    box.appendChild(btn);
+  for (const col of Object.keys(COLUMNS)) {
+    const box = $(`col-${col}`);
+    for (const n of LEVEL_NUMBERS.filter((n) => LEVELS[n].column === col)) {
+      const l = LEVELS[n];
+      const btn = document.createElement("button");
+      btn.className = "level-btn" + (l.ranked ? " ranked" : "");
+      btn.id = `play${n}`;
+      btn.innerHTML = `<em class="best" id="menu-score-${n}"></em><strong></strong><span></span>`;
+      btn.querySelector("strong").textContent = `Level ${l.shown} · ${l.name}`;
+      btn.querySelector("span").textContent = l.desc;
+      btn.addEventListener("click", () => startLevel(n));
+      box.appendChild(btn);
+    }
   }
-  $("board-title").textContent = `Level ${RANKED_LEVEL} leaderboard · best streaks`;
-  $("board-level").textContent = `Level ${RANKED_LEVEL}`;
+  const r = LEVELS[RANKED_LEVEL];
+  const label = `${COLUMNS[r.column]} Level ${r.shown} (${r.name.replace(" 🏆", "")})`;
+  $("board-title").textContent = `Leaderboard · ${label}`;
+  $("board-level").textContent = label;
 }
 
 function showScreen(name) {
+  document.querySelector("main").classList.toggle("wide", name === "menu");
   $("menu").hidden = name !== "menu";
   $("game").hidden = name !== "game";
 }
