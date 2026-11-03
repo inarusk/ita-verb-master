@@ -49,10 +49,16 @@
     .columns { display: grid; gap: 8px 24px; }
     .column h2 { font-size: 1.15rem; margin: 0 0 12px; }
     .column + .column h2 { margin-top: 16px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0 24px; }
+    #col-pro { max-width: 440px; margin: 0 auto; }
+    .level-btn.pro { text-align: center; }
+    .level-btn.pro strong { font-size: 1.25rem; }
+    .tag.tense { color: var(--muted); border-color: var(--border); }
+    .tag.tense.past { color: var(--wrong); border-color: var(--wrong); }
     @media (min-width: 760px) {
       .columns { grid-template-columns: 1fr 1fr; }
       .column + .column h2 { margin-top: 0; }
-      .boards { max-width: 440px; }
+      .boards { max-width: 440px; margin-left: auto; margin-right: auto; }
     }
     h1 { font-size: 1.9rem; margin: 0 0 4px; line-height: 1.2; }
     .it-green { color: #009246; }
@@ -198,6 +204,8 @@
         <div class="column"><h2>Presente</h2><div id="col-presente"></div></div>
         <div class="column"><h2>Passato prossimo</h2><div id="col-passato"></div></div>
       </div>
+      <hr class="divider">
+      <div id="col-pro"></div>
       <div class="boards">
         <h2 id="board-title">Leaderboard · best streaks</h2>
         <div class="player">

@@ -4,29 +4,29 @@
 const PRONOUNS = [["io"], ["tu"], ["lui", "lei"], ["noi"], ["voi"], ["loro"]];
 const ALL_PRONOUNS = ["io", "tu", "lui", "lei", "noi", "voi", "loro"];
 
-// Levels, in two menu columns: Presente and Passato prossimo. In each column the
-// "all together" level is always the LAST one. To add a level, insert it before that.
-//   column: "presente" or "passato"         prompt: "it" (Italian verb) or "en" (English verb)
+// Levels: two menu columns (Presente, Passato prossimo), plus the PRO Level below them,
+// which mixes everything and has the leaderboard. To add a level, add it to a column.
+//   column: "presente", "passato" or "pro"   prompt: "it" (Italian verb) or "en" (English verb)
 //   types:  presente levels: which verb groups (see verbs.js)
-//   past:   passato levels: "avere", "essere", "reflexive" or "all" (verbs that have a "pp")
+//   past:   passato levels: "avere", "essere" or "reflexive" (verbs that have a "pp")
 //   ranked: the one level with the leaderboard
 const LEVEL_LIST = [
   { column: "presente", name: "Regular verbs", desc: "See the Italian verb, type the conjugated form", types: ["regular"], prompt: "it" },
   { column: "presente", name: "Irregular verbs", desc: "See the Italian verb, type the conjugated form", types: ["irregular"], prompt: "it" },
   { column: "presente", name: "Reflexive verbs", desc: "See the Italian verb, type the form with mi, ti, si…", types: ["reflexive"], prompt: "it" },
-  { column: "presente", name: "All verbs 🏆", desc: "See the English verb, type the Italian conjugated form", types: ["regular", "irregular", "reflexive"], prompt: "en", ranked: true },
   { column: "passato", name: "Verbs with avere", desc: "ho mangiato, hai dormito…", past: "avere", prompt: "it" },
   { column: "passato", name: "Verbs with essere", desc: "sono andato/a, sei partito/a… (maschile / femminile)", past: "essere", prompt: "it" },
   { column: "passato", name: "Reflexive verbs", desc: "mi sono alzato/a, ti sei svegliato/a…", past: "reflexive", prompt: "it" },
-  { column: "passato", name: "All verbs", desc: "See the English verb, type the Italian passato prossimo", past: "all", prompt: "en" },
+  { column: "pro", name: "PRO Level 🏆", desc: "All verbs, presente and passato prossimo mixed. See the English verb, type the Italian", pro: true, prompt: "en", ranked: true },
 ];
 const COLUMNS = { presente: "Presente", passato: "Passato prossimo" };
 const LEVELS = {};
 const LEVEL_NUMBERS = LEVEL_LIST.map((_, i) => i + 1); // internal ids
 LEVEL_LIST.forEach((l, i) => {
   const shown = LEVEL_LIST.slice(0, i + 1).filter((x) => x.column === l.column).length; // number within its column
-  LEVELS[i + 1] = { ...l, tense: l.past ? "past" : "present", shown,
-    title: `${COLUMNS[l.column]} · Level ${shown} · ${l.name.replace(" 🏆", "")}` };
+  const label = l.pro ? l.name.replace(" 🏆", "") : `Level ${shown} · ${l.name}`;
+  LEVELS[i + 1] = { ...l, shown, label,
+    title: l.pro ? label : `${COLUMNS[l.column]} · ${label}` };
 });
 const RANKED_LEVEL = LEVEL_NUMBERS.find((n) => LEVELS[n].ranked);
 // The leaderboard is stored on the server under id 4 (it was Level 4 when it started),
@@ -75,7 +75,7 @@ function dropPronoun(s) {
 
 // All accepted answers for a question; the first one is the "main" spelling.
 function answersFor(q) {
-  if (LEVELS[level].tense !== "past") return [q.verb.forms[q.slot]];
+  if (q.tense !== "past") return [q.verb.forms[q.slot]];
   // Passato prossimo = auxiliary (avere / essere, with mi/ti/si for reflexive verbs) + participle.
   const v = q.verb;
   const aux = v.type === "reflexive" ? ["mi sono", "ti sei", "si è", "ci siamo", "vi siete", "si sono"]
@@ -121,13 +121,22 @@ function closestAnswer(input, answers) {
   return best;
 }
 
-function verbsFor(lvl) {
-  const past = LEVELS[lvl].past;
-  if (past) {
-    const group = (v) => (v.type === "reflexive" ? "reflexive" : v.aux);
-    return VERBS.filter((v) => v.pp && (past === "all" || group(v) === past));
+// The "cards" a level deals from: each is a verb plus the tense it's asked in.
+function cardsFor(lvl) {
+  const l = LEVELS[lvl];
+  const group = (v) => (v.type === "reflexive" ? "reflexive" : v.aux);
+  if (l.pro) {
+    return [
+      ...VERBS.filter((v) => v.forms).map((verb) => ({ verb, tense: "present" })),
+      ...VERBS.filter((v) => v.pp).map((verb) => ({ verb, tense: "past" })),
+    ];
   }
-  return VERBS.filter((v) => LEVELS[lvl].types.includes(v.type));
+  if (l.past) return VERBS.filter((v) => v.pp && group(v) === l.past).map((verb) => ({ verb, tense: "past" }));
+  return VERBS.filter((v) => l.types.includes(v.type)).map((verb) => ({ verb, tense: "present" }));
+}
+
+function verbsFor(lvl) {
+  return [...new Set(cardsFor(lvl).map((c) => c.verb))];
 }
 
 function shuffle(arr) {
@@ -149,7 +158,11 @@ function deal(deck, items, previous) {
   return deck.shift();
 }
 
+let cards = [];       // this level's cards (built once per level so the deck can compare them)
+let lastCard = null;
 function resetQueue() {
+  cards = level ? cardsFor(level) : [];
+  lastCard = null;
   verbDeck = [];
   pronounDeck = [];
   lastVerb = null;
@@ -159,7 +172,7 @@ function resetQueue() {
 
 // Put the exact same question back in the queue, 3 or 4 questions from now.
 function scheduleRetry(q) {
-  retries.push({ verb: q.verb, slot: q.slot, pronoun: q.pronoun, gender: q.gender, wait: 3 + Math.floor(Math.random() * 2) });
+  retries.push({ verb: q.verb, tense: q.tense, slot: q.slot, pronoun: q.pronoun, gender: q.gender, wait: 3 + Math.floor(Math.random() * 2) });
 }
 
 function pickQuestion() {
@@ -168,14 +181,16 @@ function pickQuestion() {
   const due = retries.findIndex((r) => r.wait <= 0);
   if (due >= 0) {
     const r = retries.splice(due, 1)[0];
-    q = { verb: r.verb, slot: r.slot, pronoun: r.pronoun, gender: r.gender, retry: true };
+    q = { verb: r.verb, tense: r.tense, slot: r.slot, pronoun: r.pronoun, gender: r.gender, retry: true };
   } else {
-    const verb = deal(verbDeck, verbsFor(level), lastVerb);
+    const card = deal(verbDeck, cards, lastCard);
+    const verb = card.verb;
+    lastCard = card;
     const slot = deal(pronounDeck, [0, 1, 2, 3, 4, 5], lastSlot);
     const options = PRONOUNS[slot];
-    q = { verb, slot, pronoun: options[Math.floor(Math.random() * options.length)] };
+    q = { verb, tense: card.tense, slot, pronoun: options[Math.floor(Math.random() * options.length)] };
     // Passato prossimo: the question also says maschile or femminile (lui/lei already do).
-    if (LEVELS[level].tense === "past" && agrees(verb)) {
+    if (q.tense === "past" && agrees(verb)) {
       q.gender = q.pronoun === "lei" ? "f" : q.pronoun === "lui" ? "m" : (Math.random() < 0.5 ? "m" : "f");
     }
   }
@@ -187,24 +202,20 @@ function pickQuestion() {
 
 // Level buttons are built from LEVEL_LIST, so adding a level needs no HTML changes.
 function buildMenu() {
-  for (const col of Object.keys(COLUMNS)) {
-    const box = $(`col-${col}`);
-    for (const n of LEVEL_NUMBERS.filter((n) => LEVELS[n].column === col)) {
-      const l = LEVELS[n];
-      const btn = document.createElement("button");
-      btn.className = "level-btn" + (l.ranked ? " ranked" : "");
-      btn.id = `play${n}`;
-      btn.innerHTML = `<em class="best" id="menu-score-${n}"></em><strong></strong><span></span>`;
-      btn.querySelector("strong").textContent = `Level ${l.shown} · ${l.name}`;
-      btn.querySelector("span").textContent = l.desc;
-      btn.addEventListener("click", () => startLevel(n));
-      box.appendChild(btn);
-    }
+  for (const n of LEVEL_NUMBERS) {
+    const l = LEVELS[n];
+    const btn = document.createElement("button");
+    btn.className = "level-btn" + (l.ranked ? " ranked" : "") + (l.pro ? " pro" : "");
+    btn.id = `play${n}`;
+    btn.innerHTML = `<em class="best" id="menu-score-${n}"></em><strong></strong><span></span>`;
+    btn.querySelector("strong").textContent = l.pro ? l.name : l.label;
+    btn.querySelector("span").textContent = l.desc;
+    btn.addEventListener("click", () => startLevel(n));
+    $(`col-${l.column}`).appendChild(btn);
   }
-  const r = LEVELS[RANKED_LEVEL];
-  const label = `${COLUMNS[r.column]} Level ${r.shown} (${r.name.replace(" 🏆", "")})`;
+  const label = LEVELS[RANKED_LEVEL].label;
   $("board-title").textContent = `Leaderboard · ${label}`;
-  $("board-level").textContent = label;
+  $("board-level").textContent = `the ${label}`;
 }
 
 function showScreen(name) {
@@ -332,6 +343,12 @@ function showPrompt() {
     $("verb").textContent = v.en;
     if (v.type === "reflexive") {
       $("verb").insertAdjacentHTML("beforeend", ` <span class="tag">reflexive</span>`);
+    }
+    if (LEVELS[level].pro) {
+      // PRO mixes tenses, so say which one is asked.
+      $("verb").insertAdjacentHTML("beforeend", current.tense === "past"
+        ? ` <span class="tag tense past">passato prossimo</span>`
+        : ` <span class="tag tense">presente</span>`);
     }
   }
 }
