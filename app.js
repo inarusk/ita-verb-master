@@ -8,15 +8,18 @@ const ALL_PRONOUNS = ["io", "tu", "lui", "lei", "noi", "voi", "loro"];
 // which mixes everything and has the leaderboard. To add a level, add it to a column.
 //   column: "presente", "passato" or "pro"   prompt: "it" (Italian verb) or "en" (English verb)
 //   types:  presente levels: which verb groups (see verbs.js)
-//   past:   passato levels: "avere", "essere" or "reflexive" (verbs that have a "pp")
+//   past:   passato levels: "avere", "essere", "reflexive" or "all" (verbs that have a "pp")
+// In each column, Level 4 is Levels 1-3 together, prompted in Italian like them.
 //   ranked: the one level with the leaderboard
 const LEVEL_LIST = [
   { column: "presente", name: "Regular verbs", desc: "See the Italian verb, type the conjugated form", types: ["regular"], prompt: "it" },
   { column: "presente", name: "Irregular verbs", desc: "See the Italian verb, type the conjugated form", types: ["irregular"], prompt: "it" },
   { column: "presente", name: "Reflexive verbs", desc: "See the Italian verb, type the form with mi, ti, si…", types: ["reflexive"], prompt: "it" },
+  { column: "presente", name: "All verbs", desc: "Levels 1–3 together", types: ["regular", "irregular", "reflexive"], prompt: "it" },
   { column: "passato", name: "Verbs with avere", desc: "ho mangiato, hai dormito…", past: "avere", prompt: "it" },
   { column: "passato", name: "Verbs with essere", desc: "sono andato/a, sei partito/a… (maschile / femminile)", past: "essere", prompt: "it" },
   { column: "passato", name: "Reflexive verbs", desc: "mi sono alzato/a, ti sei svegliato/a…", past: "reflexive", prompt: "it" },
+  { column: "passato", name: "All verbs", desc: "Levels 1–3 together", past: "all", prompt: "it" },
   { column: "pro", name: "PRO Level 🏆", desc: "All verbs, presente and passato prossimo mixed. See the English verb, type the Italian", pro: true, prompt: "en", ranked: true },
 ];
 const COLUMNS = { presente: "Presente", passato: "Passato prossimo" };
@@ -131,7 +134,7 @@ function cardsFor(lvl) {
       ...VERBS.filter((v) => v.pp).map((verb) => ({ verb, tense: "past" })),
     ];
   }
-  if (l.past) return VERBS.filter((v) => v.pp && group(v) === l.past).map((verb) => ({ verb, tense: "past" }));
+  if (l.past) return VERBS.filter((v) => v.pp && (l.past === "all" || group(v) === l.past)).map((verb) => ({ verb, tense: "past" }));
   return VERBS.filter((v) => l.types.includes(v.type)).map((verb) => ({ verb, tense: "present" }));
 }
 

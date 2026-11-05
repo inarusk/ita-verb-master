@@ -8,11 +8,13 @@ The menu has two columns, then the PRO Level below them.
 1. Regular verbs, prompted in Italian.
 2. Irregular verbs, prompted in Italian.
 3. Reflexive verbs, prompted in Italian. The answer includes mi / ti / si / ci / vi / si.
+4. All verbs: Levels 1–3 together, prompted in Italian.
 
 **Passato prossimo**
 1. Verbs with avere (ho mangiato).
 2. Verbs with essere (sono andato/a). The question says maschile or femminile.
 3. Reflexive verbs (mi sono alzato/a). The question says maschile or femminile.
+4. All verbs: Levels 1–3 together, prompted in Italian.
 
 **PRO Level:** every verb in both tenses, mixed and prompted in English. Each question says "presente" or
 "passato prossimo". This is the only level with a leaderboard.
