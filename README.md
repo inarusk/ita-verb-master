@@ -11,8 +11,8 @@ The menu has two columns, then the PRO Level below them.
 4. All verbs: Levels 1–3 together, prompted in Italian.
 
 **Passato prossimo**
-1. Verbs with avere (ho mangiato).
-2. Verbs with essere (sono andato/a). The question says maschile or femminile.
+1. Verbs with avere, regular and irregular participles (ho mangiato, ho fatto).
+2. Verbs with essere, regular and irregular participles (sono andato/a, sono rimasto/a). The question says maschile or femminile.
 3. Reflexive verbs (mi sono alzato/a). The question says maschile or femminile.
 4. All verbs: Levels 1–3 together, prompted in Italian.
 

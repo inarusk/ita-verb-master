@@ -16,8 +16,8 @@ const LEVEL_LIST = [
   { column: "presente", name: "Irregular verbs", desc: "See the Italian verb, type the conjugated form", types: ["irregular"], prompt: "it" },
   { column: "presente", name: "Reflexive verbs", desc: "See the Italian verb, type the form with mi, ti, si…", types: ["reflexive"], prompt: "it" },
   { column: "presente", name: "All verbs", desc: "Levels 1–3 together", types: ["regular", "irregular", "reflexive"], prompt: "it" },
-  { column: "passato", name: "Verbs with avere", desc: "ho mangiato, hai dormito…", past: "avere", prompt: "it" },
-  { column: "passato", name: "Verbs with essere", desc: "sono andato/a, sei partito/a… (maschile / femminile)", past: "essere", prompt: "it" },
+  { column: "passato", name: "Verbs with avere", desc: "ho mangiato, hai dormito, ho fatto, ho preso…", past: "avere", prompt: "it" },
+  { column: "passato", name: "Verbs with essere", desc: "sono andato/a, sono rimasto/a… (maschile / femminile)", past: "essere", prompt: "it" },
   { column: "passato", name: "Reflexive verbs", desc: "mi sono alzato/a, ti sei svegliato/a…", past: "reflexive", prompt: "it" },
   { column: "passato", name: "All verbs", desc: "Levels 1–3 together", past: "all", prompt: "it" },
   { column: "pro", name: "PRO Level 🏆", desc: "All verbs, presente and passato prossimo mixed. See the English verb, type the Italian", pro: true, prompt: "en", ranked: true },
@@ -90,7 +90,8 @@ function answersFor(q) {
     const plural = q.slot >= 3;
     ending = q.gender === "f" ? (plural ? "e" : "a") : (plural ? "i" : "o");
   }
-  return [`${aux[q.slot]} ${v.pp}${ending}`];
+  // Some verbs have two accepted participles (perso / perduto); the first is the main one.
+  return [v.pp, v.ppAlt].filter(Boolean).map((pp) => `${aux[q.slot]} ${pp}${ending}`);
 }
 
 // Does the participle change with the subject's gender? (essere verbs and reflexive verbs)

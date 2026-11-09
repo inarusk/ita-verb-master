@@ -5,6 +5,8 @@
 // Passato prossimo: verbs with a "pp" are in that level. pp = past participle without its last vowel
 // ("mangiat" -> mangiato), aux = "avere" or "essere". With essere (and all reflexive verbs) the
 // participle agrees with the subject: andato / andata / andati / andate. With avere it stays -o.
+// ppIrr: true = irregular participle (fatto, preso, rimasto…); just a marker, they sit in the normal avere / essere levels.
+// ppAlt = a second accepted participle (perso / perduto).
 // To add a verb, copy a line and change it.
 const VERBS = [
   // ---- Level 1: regular ----
@@ -12,16 +14,16 @@ const VERBS = [
   { type: "regular", it: "dormire", pp: "dormit", aux: "avere",   en: "to sleep",   forms: ["dormo", "dormi", "dorme", "dormiamo", "dormite", "dormono"] },
   { type: "regular", it: "partire", pp: "partit", aux: "essere",   en: "to leave (depart)", forms: ["parto", "parti", "parte", "partiamo", "partite", "partono"] },
   { type: "regular", it: "vivere",    en: "to live",    forms: ["vivo", "vivi", "vive", "viviamo", "vivete", "vivono"] },
-  { type: "regular", it: "prendere",  en: "to take",    forms: ["prendo", "prendi", "prende", "prendiamo", "prendete", "prendono"] },
+  { type: "regular", it: "prendere", pp: "pres", aux: "avere", ppIrr: true,  en: "to take",    forms: ["prendo", "prendi", "prende", "prendiamo", "prendete", "prendono"] },
   { type: "regular", it: "comprare",  en: "to buy",     forms: ["compro", "compri", "compra", "compriamo", "comprate", "comprano"] },
   { type: "regular", it: "vendere",   en: "to sell",    forms: ["vendo", "vendi", "vende", "vendiamo", "vendete", "vendono"] },
   { type: "regular", it: "lavorare", pp: "lavorat", aux: "avere",  en: "to work",    forms: ["lavoro", "lavori", "lavora", "lavoriamo", "lavorate", "lavorano"] },
-  { type: "regular", it: "vedere",    en: "to see",     forms: ["vedo", "vedi", "vede", "vediamo", "vedete", "vedono"] },
+  { type: "regular", it: "vedere", pp: "vist", aux: "avere", ppIrr: true,    en: "to see",     forms: ["vedo", "vedi", "vede", "vediamo", "vedete", "vedono"] },
   { type: "regular", it: "studiare", pp: "studiat", aux: "avere",  en: "to study",   forms: ["studio", "studi", "studia", "studiamo", "studiate", "studiano"] },
   { type: "regular", it: "finire",    en: "to finish",  forms: ["finisco", "finisci", "finisce", "finiamo", "finite", "finiscono"] },
   { type: "regular", it: "preparare", en: "to prepare", forms: ["preparo", "prepari", "prepara", "prepariamo", "preparate", "preparano"] },
   { type: "regular", it: "preferire", en: "to prefer",  forms: ["preferisco", "preferisci", "preferisce", "preferiamo", "preferite", "preferiscono"] },
-  { type: "regular", it: "scrivere",  en: "to write",   forms: ["scrivo", "scrivi", "scrive", "scriviamo", "scrivete", "scrivono"] },
+  { type: "regular", it: "scrivere", pp: "scritt", aux: "avere", ppIrr: true,  en: "to write",   forms: ["scrivo", "scrivi", "scrive", "scriviamo", "scrivete", "scrivono"] },
   { type: "regular", it: "sentire",   en: "to hear / to feel", forms: ["sento", "senti", "sente", "sentiamo", "sentite", "sentono"] },
   { type: "regular", it: "parlare",   en: "to speak",   forms: ["parlo", "parli", "parla", "parliamo", "parlate", "parlano"] },
 
@@ -31,18 +33,21 @@ const VERBS = [
   { type: "regular", it: "tornare",   en: "to return / to come back", pp: "tornat", aux: "essere", forms: ["torno", "torni", "torna", "torniamo", "tornate", "tornano"] },
   { type: "regular", it: "crescere",  en: "to grow (up)", pp: "cresciut", aux: "essere", forms: ["cresco", "cresci", "cresce", "cresciamo", "crescete", "crescono"] },
   { type: "regular", it: "viaggiare", en: "to travel",  pp: "viaggiat", aux: "avere", forms: ["viaggio", "viaggi", "viaggia", "viaggiamo", "viaggiate", "viaggiano"] },
+  { type: "regular", it: "nascere",   en: "to be born", pp: "nat", aux: "essere", ppIrr: true, forms: ["nasco", "nasci", "nasce", "nasciamo", "nascete", "nascono"] },
+  { type: "regular", it: "perdere",   en: "to lose",    pp: "pers", ppAlt: "perdut", aux: "avere", ppIrr: true, forms: ["perdo", "perdi", "perde", "perdiamo", "perdete", "perdono"] },
+  { type: "regular", it: "leggere",   en: "to read",    pp: "lett", aux: "avere", ppIrr: true, forms: ["leggo", "leggi", "legge", "leggiamo", "leggete", "leggono"] },
 
   // ---- Level 2: irregular ----
-  { type: "irregular", it: "essere",   en: "to be",      forms: ["sono", "sei", "è", "siamo", "siete", "sono"] },
+  { type: "irregular", it: "essere", pp: "stat", aux: "essere", ppIrr: true,   en: "to be",      forms: ["sono", "sei", "è", "siamo", "siete", "sono"] },
   { type: "irregular", it: "avere", pp: "avut", aux: "avere",    en: "to have",    forms: ["ho", "hai", "ha", "abbiamo", "avete", "hanno"] },
   { type: "irregular", it: "andare", pp: "andat", aux: "essere",   en: "to go",      forms: ["vado", "vai", "va", "andiamo", "andate", "vanno"] },
-  { type: "irregular", it: "venire",   en: "to come",    forms: ["vengo", "vieni", "viene", "veniamo", "venite", "vengono"] },
-  { type: "irregular", it: "fare",     en: "to do / to make", forms: ["faccio", "fai", "fa", "facciamo", "fate", "fanno"] },
+  { type: "irregular", it: "venire", pp: "venut", aux: "essere", ppIrr: true,   en: "to come",    forms: ["vengo", "vieni", "viene", "veniamo", "venite", "vengono"] },
+  { type: "irregular", it: "fare", pp: "fatt", aux: "avere", ppIrr: true,     en: "to do / to make", forms: ["faccio", "fai", "fa", "facciamo", "fate", "fanno"] },
   { type: "irregular", it: "dovere",   en: "to have to (must)", forms: ["devo", "devi", "deve", "dobbiamo", "dovete", "devono"] },
   { type: "irregular", it: "uscire", pp: "uscit", aux: "essere",   en: "to go out",  forms: ["esco", "esci", "esce", "usciamo", "uscite", "escono"] },
   { type: "irregular", it: "volere",   en: "to want",    forms: ["voglio", "vuoi", "vuole", "vogliamo", "volete", "vogliono"] },
   { type: "irregular", it: "dire",     en: "to say / to tell", forms: ["dico", "dici", "dice", "diciamo", "dite", "dicono"] },
-  { type: "irregular", it: "rimanere", en: "to remain / to stay", forms: ["rimango", "rimani", "rimane", "rimaniamo", "rimanete", "rimangono"] },
+  { type: "irregular", it: "rimanere", pp: "rimast", aux: "essere", ppIrr: true, en: "to remain / to stay", forms: ["rimango", "rimani", "rimane", "rimaniamo", "rimanete", "rimangono"] },
   { type: "irregular", it: "bere",     en: "to drink",   forms: ["bevo", "bevi", "beve", "beviamo", "bevete", "bevono"] },
   { type: "irregular", it: "potere",   en: "to be able to (can)", forms: ["posso", "puoi", "può", "possiamo", "potete", "possono"] },
   { type: "irregular", it: "stare",    en: "to be / to stay (feel, location)", pp: "stat", aux: "essere", forms: ["sto", "stai", "sta", "stiamo", "state", "stanno"] },
